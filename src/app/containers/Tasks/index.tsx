@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   Flex,
   Form,
   Input,
@@ -11,10 +10,12 @@ import {
   Select,
   Table,
   Typography,
+  message,
 } from 'antd';
 import { useRequest } from 'ahooks';
 import { addTask, getTasks, updateTask } from '../../services/task';
 import { getQueryParams, updateQueryParams } from '../../../utils/url';
+import styled from 'styled-components';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -24,14 +25,16 @@ const Tasks: React.FC = () => {
   const [isRefetch, setIsRefetch] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>((status as string) || '');
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
   const { run: addNewTask, loading } = useRequest(addTask, {
     manual: true,
     onSuccess: () => {
       setIsRefetch(true);
       form.resetFields();
+      messageApi.success('Add task successfully');
     },
-    onError: (error) => {
-      console.error('Add new task failed:', error);
+    onError: () => {
+      messageApi.error('Add task failed');
     },
   });
 
@@ -39,9 +42,10 @@ const Tasks: React.FC = () => {
     manual: true,
     onSuccess: () => {
       setIsRefetch(true);
+      messageApi.success('Update task status successfully');
     },
-    onError: (error) => {
-      console.error('Update task status failed:', error);
+    onError: () => {
+      messageApi.error('Update task status failed');
     },
   });
   const onFinish = async (values: Task.Item) => {
@@ -119,29 +123,34 @@ const Tasks: React.FC = () => {
   }, [isRefetch]);
   return (
     <Content style={{ padding: '24px', minHeight: 280 }}>
-      <Card>
-        <Title level={2}>Tasks</Title>
-        <Card>
-          <Title level={3}>Add Task</Title>
-          <Form form={form} onFinish={onFinish}>
-            <Form.Item
-              name="name"
-              rules={[
-                { required: true, message: 'Please input the task name!' },
-              ]}
-            >
-              <Input placeholder="Task name" />
-            </Form.Item>
-            <Form.Item>
-              <Flex gap={10}>
-                <Button onClick={() => form.resetFields()}>Reset</Button>
-                <Button type="primary" htmlType="submit" loading={loading}>
-                  Add Task
-                </Button>
-              </Flex>
-            </Form.Item>
-          </Form>
-          <Divider />
+      {contextHolder}
+      <Title level={2} style={{ marginTop: 0 }}>
+        Task Management
+      </Title>
+      <Card bordered={false}>
+        <Title level={3}>Add New Task</Title>
+        <Form form={form} onFinish={onFinish} size="large">
+          <Form.Item
+            name="name"
+            rules={[{ required: true, message: 'Please input the task name!' }]}
+          >
+            <Input placeholder="Task name" />
+          </Form.Item>
+          <Form.Item>
+            <Flex gap={10}>
+              <Button onClick={() => form.resetFields()}>Reset</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Add Task
+              </Button>
+            </Flex>
+          </Form.Item>
+        </Form>
+      </Card>
+      <Card bordered={false} style={{ marginTop: 20 }}>
+        <Flex justify="space-between" align="center">
+          <Title level={2} style={{ marginTop: 0 }}>
+            Tasks
+          </Title>
           <Flex gap={10} align="center" style={{ marginBottom: 10 }}>
             <Title level={4} style={{ margin: 0 }}>
               Filters
@@ -156,16 +165,24 @@ const Tasks: React.FC = () => {
               }}
             />
           </Flex>
+        </Flex>
+        <CardTableWrapper>
           <Table
             dataSource={tasks}
             columns={columns}
             loading={listLoading}
             rowKey="id"
           />
-        </Card>
+        </CardTableWrapper>
       </Card>
     </Content>
   );
 };
 
 export default Tasks;
+
+const CardTableWrapper = styled(Card)`
+  .ant-card-body {
+    padding: 0;
+  }
+`;
