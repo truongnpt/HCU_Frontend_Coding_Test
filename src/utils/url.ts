@@ -3,7 +3,7 @@ export const getQueryParams = () => {
   return qs.parse(window.location.search, { ignoreQueryPrefix: true });
 };
 
-export const updateQueryParams = (params: Record<string, any>) => {
+export const updateQueryParams = (params: Record<string, string>) => {
   const queryString = qs.stringify(params);
 
   window.history.pushState(

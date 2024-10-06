@@ -13,17 +13,28 @@ import {
   message,
 } from 'antd';
 import { useRequest } from 'ahooks';
-import { addTask, getTasks, updateTask } from '../../services/task';
+import { addTask, updateTask } from '../../services/task';
 import { getQueryParams, updateQueryParams } from '../../../utils/url';
 import styled from 'styled-components';
+import { useDispatch, useSelector } from 'react-redux';
+import { actions } from './slice';
+import { selectTasks } from './selectors ';
 
 const { Content } = Layout;
 const { Title } = Typography;
 
 const Tasks: React.FC = () => {
+  const dispatch = useDispatch();
+  const {
+    tasks,
+    filter: taskFilter,
+    listTaskLoading,
+  } = useSelector(selectTasks);
   const { status } = getQueryParams();
-  const [isRefetch, setIsRefetch] = useState<boolean>(false);
-  const [filter, setFilter] = useState<string>((status as string) || '');
+  const [isRefetch, setIsRefetch] = useState<boolean>(true);
+  const [filter, setFilter] = useState<string>(
+    (status as string) || taskFilter
+  );
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const { run: addNewTask, loading } = useRequest(addTask, {
@@ -111,16 +122,18 @@ const Tasks: React.FC = () => {
     setIsRefetch(true);
   };
 
-  const {
-    run: getListTasks,
-    loading: listLoading,
-    data: tasks,
-  } = useRequest(getTasks);
+  // const {
+  //   run: getListTasks,
+  //   loading: listLoading,
+  //   data: tasks,
+  // } = useRequest(getTasks);
 
   useEffect(() => {
-    getListTasks(filter);
-    setIsRefetch(false);
-  }, [isRefetch]);
+    if (isRefetch) {
+      dispatch(actions.fetchTasks(filter));
+      setIsRefetch(false);
+    }
+  }, [isRefetch, dispatch, filter]);
   return (
     <Content style={{ padding: '24px', minHeight: 280 }}>
       {contextHolder}
@@ -170,7 +183,7 @@ const Tasks: React.FC = () => {
           <Table
             dataSource={tasks}
             columns={columns}
-            loading={listLoading}
+            loading={listTaskLoading}
             rowKey="id"
           />
         </CardTableWrapper>
